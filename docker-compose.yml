@@ -10,16 +10,12 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
       - ./order/backend/src/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   backend:
     build: 
       context: ./order/backend
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
       NODE_ENV: development
       POSTGRES_USER: postgres
@@ -29,25 +25,27 @@ services:
       PORT: 4000
     ports:
       - "4000:4000"
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
-      - ./order/backend:/app
-      - /app/node_modules
+      - ./order/backend/src:/app/src
+    command: npm run dev
 
   webapp:
     build:
       context: ./webapp
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      NUXT_PUBLIC_API_URL: http://localhost:4000/graphql
+      NUXT_PUBLIC_API_URL: http://backend:4000/graphql
+      HOST: "0.0.0.0"
     volumes:
-      - ./webapp:/app
-      - /app/node_modules
+      - ./webapp/components:/app/components
+      - ./webapp/pages:/app/pages
+      - ./webapp/utils:/app/utils
+      - ./webapp/queries:/app/queries
+    command: npm run dev
     depends_on:
       - backend
 

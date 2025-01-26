@@ -34,7 +34,7 @@ const resolvers = {
         FROM orders o
         ORDER BY o.order_date DESC
       `);
-      console.log('Fetched orders:', result.rows);
+      // console.log('Fetched orders:', result.rows);
       return result.rows;
     },
 

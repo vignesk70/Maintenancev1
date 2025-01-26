@@ -1,0 +1,101 @@
+query GetOrders {
+  orders {
+    id
+    orderDate
+    status
+    customer {
+      id
+      name
+      email
+    }
+    items {
+      id
+      productName
+      quantity
+      price
+    }
+    payment {
+      status
+      amount
+      paymentDate
+    }
+  }
+}
+
+mutation CreateOrder($customerId: ID!, $items: [OrderItemInput!]!) {
+  createOrder(customerId: $customerId, items: $items) {
+    id
+    status
+    customer {
+      name
+    }
+  }
+}
+
+query GetOrder($id: ID!) {
+  order(id: $id) {
+    id
+    orderDate
+    status
+    customer {
+      id
+      name
+      email
+      phone
+    }
+    items {
+      id
+      productName
+      quantity
+      price
+    }
+  }
+}
+
+mutation UpdateOrderStatus($id: ID!, $status: String!) {
+  updateOrderStatus(id: $id, status: $status) {
+    id
+    status
+    orderDate
+    customer {
+      id
+      name
+      email
+      phone
+    }
+    items {
+      id
+      productName
+      quantity
+      price
+    }
+    payment {
+      status
+      amount
+      paymentDate
+      paymentMethod
+      transactionId
+    }
+  }
+}
+
+mutation UpdatePaymentStatus(
+  $orderId: ID!
+  $status: PaymentStatus!
+  $paymentMethod: String
+  $transactionId: String
+) {
+  updatePaymentStatus(
+    orderId: $orderId
+    status: $status
+    paymentMethod: $paymentMethod
+    transactionId: $transactionId
+  ) {
+    id
+    status
+    amount
+    paymentDate
+    paymentMethod
+    transactionId
+  }
+} 

@@ -1,0 +1,45 @@
+query GetCustomers {
+  customers {
+    id
+    name
+    email
+    phone
+    orders {
+      id
+    }
+  }
+}
+
+mutation CreateCustomer($name: String!, $email: String!, $address: String!, $phone: String!) {
+  createCustomer(name: $name, email: $email, address: $address, phone: $phone) {
+    id
+    name
+    email
+  }
+}
+
+query GetCustomer($id: ID!) {
+  customer(id: $id) {
+    id
+    name
+    email
+    address
+    phone
+    orders {
+      id
+      orderDate
+      status
+      items {
+        id
+        productName
+        quantity
+        price
+      }
+      payment {
+        status
+        amount
+        paymentDate
+      }
+    }
+  }
+} 

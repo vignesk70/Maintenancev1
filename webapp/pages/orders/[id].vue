@@ -35,20 +35,31 @@
                     {
                       'bg-green-100 text-green-800': data.status === 'COMPLETED',
                       'bg-yellow-100 text-yellow-800': data.status === 'PENDING',
-                      'bg-blue-100 text-blue-800': data.status === 'PROCESSING'
+                      'bg-blue-100 text-blue-800': data.status === 'PROCESSING',
+                      'bg-red-100 text-red-800': data.status === 'CANCELLED'
                     }
                   ]"
                 >
                   {{ data.status }}
                 </span>
-                <button
-                  v-if="data.status !== 'COMPLETED'"
-                  @click="updateStatus('COMPLETED')"
-                  class="text-sm text-blue-600 hover:text-blue-800"
-                  :disabled="updating"
-                >
-                  Mark as Completed
-                </button>
+                <div class="flex gap-2">
+                  <button
+                    v-if="data.status === 'PENDING' || data.status === 'PROCESSING'"
+                    @click="updateStatus('COMPLETED')"
+                    class="text-sm text-blue-600 hover:text-blue-800"
+                    :disabled="updating"
+                  >
+                    Mark as Completed
+                  </button>
+                  <button
+                    v-if="data.status !== 'CANCELLED' && data.status !== 'COMPLETED'"
+                    @click="confirmCancel"
+                    class="text-sm text-red-600 hover:text-red-800"
+                    :disabled="updating"
+                  >
+                    Cancel Order
+                  </button>
+                </div>
               </dd>
             </div>
           </dl>
@@ -87,7 +98,8 @@
                       'bg-green-100 text-green-800': data.payment?.status === 'PAID',
                       'bg-yellow-100 text-yellow-800': data.payment?.status === 'PENDING',
                       'bg-red-100 text-red-800': data.payment?.status === 'FAILED',
-                      'bg-gray-100 text-gray-800': data.payment?.status === 'REFUNDED'
+                      'bg-gray-100 text-gray-800': data.payment?.status === 'REFUNDED',
+                      'bg-red-100 text-red-800': data.payment?.status === 'CANCELLED'
                     }
                   ]"
                 >
@@ -97,7 +109,7 @@
                   v-model="selectedPaymentStatus"
                   @change="updatePayment"
                   class="ml-2 text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  :disabled="updating"
+                  :disabled="updating || data.status === 'CANCELLED'"
                 >
                   <option value="">Change Status</option>
                   <option 
@@ -126,9 +138,9 @@
                 </select>
               </dd>
             </div>
-            <div v-if="data.payment?.paymentMethod" class="flex justify-between">
-              <dt class="text-gray-500">Payment Method</dt>
-              <dd>{{ data.payment.paymentMethod }}</dd>
+            <div class="flex justify-between">
+              <dt class="text-gray-500">Amount</dt>
+              <dd>${{ data.payment?.amount?.toFixed(2) || orderTotal.toFixed(2) }}</dd>
             </div>
             <div v-if="data.payment?.paymentDate" class="flex justify-between">
               <dt class="text-gray-500">Payment Date</dt>
@@ -143,7 +155,7 @@
       </div>
 
       <!-- Order Items -->
-      <div class="mt-6 bg-white rounded-lg shadow">
+      <div class="mt-6 bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b">
           <h2 class="text-lg font-medium">Order Items</h2>
         </div>
@@ -155,14 +167,65 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-200">
               <tr v-for="item in data.items" :key="item.id">
-                <td class="px-6 py-4 whitespace-nowrap">{{ item.productName }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">{{ item.quantity }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${{ item.price.toFixed(2) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${{ (item.quantity * item.price).toFixed(2) }}</td>
+                <td class="px-6 py-4">
+                  {{ item.productName }}
+                </td>
+                <td class="px-6 py-4">
+                  <div v-if="editingItem?.id === item.id" class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      v-model="editingItem.quantity"
+                      class="w-20 px-2 py-1 border rounded"
+                      min="1"
+                    />
+                  </div>
+                  <span v-else>{{ item.quantity }}</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div v-if="editingItem?.id === item.id" class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      v-model="editingItem.price"
+                      class="w-24 px-2 py-1 border rounded"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <span v-else>${{ item.price.toFixed(2) }}</span>
+                </td>
+                <td class="px-6 py-4">${{ (item.quantity * item.price).toFixed(2) }}</td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <template v-if="editingItem?.id === item.id">
+                      <button
+                        @click="saveItemChanges"
+                        class="text-green-600 hover:text-green-900"
+                        :disabled="updating"
+                      >
+                        Save
+                      </button>
+                      <button
+                        @click="cancelEdit"
+                        class="text-gray-600 hover:text-gray-900"
+                        :disabled="updating"
+                      >
+                        Cancel
+                      </button>
+                    </template>
+                    <button
+                      v-else
+                      @click="startEdit(item)"
+                      class="text-blue-600 hover:text-blue-900"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </td>
               </tr>
               <tr class="bg-gray-50">
                 <td colspan="3" class="px-6 py-4 text-right font-medium">Total</td>
@@ -188,6 +251,7 @@ const error = ref(null)
 const updating = ref(false)
 const selectedPaymentStatus = ref('')
 const selectedPaymentMethod = ref('')
+const editingItem = ref(null)
 
 const paymentStatuses = ['PENDING', 'PAID', 'FAILED', 'REFUNDED']
 
@@ -217,6 +281,12 @@ const updateStatus = async (status: string) => {
       status
     })
     data.value = result.updateOrderStatus
+    
+    // Refresh the order data to get updated payment status
+    const refreshedData = await GqlGetOrder({
+      id: route.params.id as string
+    })
+    data.value = refreshedData.order
   } catch (e) {
     error.value = e.message
   } finally {
@@ -252,4 +322,51 @@ watch(selectedPaymentStatus, (newStatus) => {
     selectedPaymentMethod.value = ''
   }
 })
+
+const startEdit = (item) => {
+  editingItem.value = {
+    id: item.id,
+    quantity: item.quantity,
+    price: item.price
+  }
+}
+
+const cancelEdit = () => {
+  editingItem.value = null
+}
+
+const saveItemChanges = async () => {
+  if (!editingItem.value) return
+  
+  updating.value = true
+  try {
+    const result = await GqlUpdateOrderItem({
+      id: editingItem.value.id,
+      quantity: parseInt(editingItem.value.quantity),
+      price: parseFloat(editingItem.value.price)
+    })
+    
+    // Update the item in the local data
+    if (data.value?.items) {
+      const index = data.value.items.findIndex(item => item.id === editingItem.value.id)
+      if (index !== -1) {
+        data.value.items[index] = result.updateOrderItem
+      }
+    }
+    
+    editingItem.value = null
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    updating.value = false
+  }
+}
+
+const confirmCancel = async () => {
+  if (!confirm('Are you sure you want to cancel this order? This will also cancel any associated payments.')) {
+    return;
+  }
+  
+  await updateStatus('CANCELLED');
+}
 </script> 

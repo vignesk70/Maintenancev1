@@ -3,6 +3,8 @@ DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS order_payments CASCADE;
+DROP TYPE IF EXISTS payment_status CASCADE;
+DROP TYPE IF EXISTS order_status CASCADE;
 
 -- Create tables
 CREATE TABLE customers (
@@ -39,7 +41,7 @@ CREATE TABLE order_items (
 );
 
 -- Create payment status enum
-CREATE TYPE payment_status AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED');
+CREATE TYPE payment_status AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED');
 
 -- Create order payments table
 CREATE TABLE order_payments (

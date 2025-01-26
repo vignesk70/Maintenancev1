@@ -58,6 +58,12 @@ const typeDefs = gql`
       paymentMethod: String
       transactionId: String
     ): OrderPayment!
+
+    updateOrderItem(
+      id: ID!
+      quantity: Int
+      price: Float
+    ): OrderItem!
   }
 
   input OrderItemInput {
@@ -71,6 +77,7 @@ const typeDefs = gql`
     PAID
     FAILED
     REFUNDED
+    CANCELLED
   }
 
   type OrderPayment {

@@ -41,6 +41,7 @@ type Mutation {
   createOrder(customerId: ID!, items: [OrderItemInput!]!): Order!
   updateOrderStatus(id: ID!, status: String!): Order!
   updatePaymentStatus(orderId: ID!, status: PaymentStatus!, paymentMethod: String, transactionId: String): OrderPayment!
+  updateOrderItem(id: ID!, quantity: Int, price: Float): OrderItem!
 }
 
 input OrderItemInput {
@@ -54,6 +55,7 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  CANCELLED
 }
 
 type OrderPayment {

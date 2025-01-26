@@ -49,6 +49,14 @@ query GetOrder($id: ID!) {
       quantity
       price
     }
+    payment {
+      id
+      status
+      amount
+      paymentDate
+      paymentMethod
+      transactionId
+    }
   }
 }
 
@@ -97,5 +105,14 @@ mutation UpdatePaymentStatus(
     paymentDate
     paymentMethod
     transactionId
+  }
+}
+
+mutation UpdateOrderItem($id: ID!, $quantity: Int, $price: Float) {
+  updateOrderItem(id: $id, quantity: $quantity, price: $price) {
+    id
+    productName
+    quantity
+    price
   }
 } 

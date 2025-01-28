@@ -1,6 +1,6 @@
 export default defineNuxtPlugin(() => {
   const userToken = useCookie("auth_token");
-  const gqlToken = useGqlToken()
+  // const gqlToken = useGqlToken()
 
   // Set token if it exists
   if (userToken.value) {

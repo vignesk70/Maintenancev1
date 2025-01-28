@@ -16,12 +16,12 @@ const generateToken = (worker) => {
 };
 
 const getWorkerFromToken = async (token, pool) => {
-  console.log('Received token:', token);
+  // console.log('Received token:', token);
   if (!token) return null;
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    // console.log('Decoded token:', decoded);
     
     const result = await pool.query(
       'SELECT * FROM workers WHERE id = $1 AND active = true',
@@ -29,14 +29,14 @@ const getWorkerFromToken = async (token, pool) => {
     );
     return result.rows[0];
   } catch (e) {
-    console.error('Token verification error:', e);
+    // console.error('Token verification error:', e);
     return null;
   }
 };
 
 const requireAuth = (resolver) => {
   return async (parent, args, context, info) => {
-    console.log('Context worker:', context.worker);
+    // console.log('Context worker:', context.worker);
     if (!context.worker) {
       throw new Error('Authentication required');
     }
@@ -46,7 +46,7 @@ const requireAuth = (resolver) => {
 
 const requireAdmin = (resolver) => {
   return async (parent, args, context, info) => {
-    console.log('Checking admin. Worker:', context.worker);
+    // console.log('Checking admin. Worker:', context.worker);
     if (!context.worker) {
       throw new Error('Authentication required');
     }

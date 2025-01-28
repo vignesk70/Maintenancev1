@@ -2,7 +2,8 @@ export const useAuth = () => {
   const userToken = useCookie("auth_token")
   const worker = ref<any>(null)
 
-  const { data } = useAsyncGql('GetCurrentWorker')
+  // const { data } = useAsyncGql('GetCurrentWorker')
+  const data = GqlGetCurrentWorker()
   
   watchEffect(() => {
     if (data.value?.currentWorker) {

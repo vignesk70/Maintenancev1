@@ -35,8 +35,11 @@
                 <!-- Right side -->
                 <div class="flex items-center">
                     <ClientOnly>
-                        <UButton v-if="worker" color="gray" variant="ghost" @click="logout">
+                        <UButton v-if="isAdmin" color="gray" variant="ghost" @click="logout">
                             Logout
+                        </UButton>
+                        <UButton v-else color="gray" variant="ghost" to="/login">
+                            Login
                         </UButton>
                     </ClientOnly>
                 </div>
@@ -46,8 +49,9 @@
 </template>
 
 <script setup lang="ts">
-const { worker, isAdmin, logout } = useAuth()
 
+const { worker, isAdmin, logout } = useAuth()
+console.log('useauth', worker)
 
 const adminItems = [
     [

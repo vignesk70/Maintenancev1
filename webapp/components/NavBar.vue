@@ -21,14 +21,23 @@
                         </NuxtLink>
 
                         <!-- Admin Links -->
-                        <ClientOnly>
+                        <!-- <ClientOnly>
                             <UDropdown v-if="isAdmin" :items="adminItems" :popper="{ placement: 'bottom-start' }">
                                 <template #trigger>
                                     <UButton color="gray" variant="ghost" label="Admin"
                                         trailing-icon="i-heroicons-chevron-down-20-solid" />
                                 </template>
                             </UDropdown>
-                        </ClientOnly>
+                        </ClientOnly> -->
+                        <!-- <UDropdown :items="adminItems" :popper="{ placement: 'bottom-start' }" class=" font-medium text-sm text-gray-900 on-click:outline-none on-click:ring-0 on-active:outline-none on-active:ring-0">
+                            <template #trigger>
+                                <UButton color="white" label="Admin" trailing-icon="i-heroicons-chevron-down-20-solid" />
+                            </template>
+                        </UDropdown> -->
+                        <div v-if="isAdmin" class="flex items-center align-middle">
+                        <UDropdown :items="adminItems" :popper="{ placement: 'bottom-start' }">
+    <UButton color="white" label="Options" trailing-icon="i-heroicons-chevron-down-20-solid" />
+  </UDropdown></div>
                     </div>
                 </div>
 

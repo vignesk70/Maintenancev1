@@ -1,8 +1,10 @@
 <template>
   <div class="bg-white rounded-lg shadow">
-    <ErrorDisplay v-if="error" :error="error" />
-    <div v-if="loading" class="flex justify-center py-8">
+    <div v-if="pending" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    </div>
+    <div v-else-if="error" class="p-4 bg-red-50 text-red-700 rounded-md">
+      {{ error.message }}
     </div>
     <div v-else class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
@@ -18,7 +20,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="customer in data" :key="customer.id">
+          <tr v-for="customer in customers?.customers" :key="customer.id">
             <td class="px-6 py-4 whitespace-nowrap">{{ customer.name }}</td>
             <td class="px-6 py-4 whitespace-nowrap">{{ customer.email }}</td>
             <td class="px-6 py-4 whitespace-nowrap">{{ customer.phone }}</td>
@@ -45,18 +47,5 @@ const columns = [
   { key: 'actions', label: 'Actions' }
 ]
 
-const data = ref(null)
-const loading = ref(true)
-const error = ref(null)
-
-onMounted(async () => {
-  try {
-    const result = await GqlGetCustomers()
-    data.value = result.customers
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
-})
+const { data: customers, error, pending } = await useAsyncGql('GetCustomers')
 </script> 

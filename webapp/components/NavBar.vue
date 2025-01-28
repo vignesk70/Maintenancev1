@@ -21,23 +21,14 @@
                         </NuxtLink>
 
                         <!-- Admin Links -->
-                        <!-- <ClientOnly>
-                            <UDropdown v-if="isAdmin" :items="adminItems" :popper="{ placement: 'bottom-start' }">
-                                <template #trigger>
-                                    <UButton color="gray" variant="ghost" label="Admin"
-                                        trailing-icon="i-heroicons-chevron-down-20-solid" />
-                                </template>
-                            </UDropdown>
-                        </ClientOnly> -->
-                        <!-- <UDropdown :items="adminItems" :popper="{ placement: 'bottom-start' }" class=" font-medium text-sm text-gray-900 on-click:outline-none on-click:ring-0 on-active:outline-none on-active:ring-0">
-                            <template #trigger>
-                                <UButton color="white" label="Admin" trailing-icon="i-heroicons-chevron-down-20-solid" />
-                            </template>
-                        </UDropdown> -->
+                         <ClientOnly>
                         <div v-if="isAdmin" class="flex items-center align-middle">
-                        <UDropdown :items="adminItems" :popper="{ placement: 'bottom-start' }">
-    <UButton color="white" label="Options" trailing-icon="i-heroicons-chevron-down-20-solid" />
-  </UDropdown></div>
+                            <UDropdown :items="adminItems" :popper="{ placement: 'bottom-start' }">
+                                <UButton color="white" label="Options"
+                                    trailing-icon="i-heroicons-chevron-down-20-solid" />
+                            </UDropdown>
+                        </div>
+                    </ClientOnly>
                     </div>
                 </div>
 
@@ -65,11 +56,11 @@ const adminItems = [
             icon: 'i-heroicons-users-20-solid',
             to: '/workers'
         }],
-        [{
-            label: 'Company Settings',
-            icon: 'i-heroicons-building-office-20-solid',
-            to: '/admin/company'
-        }
+    [{
+        label: 'Company Settings',
+        icon: 'i-heroicons-building-office-20-solid',
+        to: '/admin/company'
+    }
     ]
 ]
 </script>

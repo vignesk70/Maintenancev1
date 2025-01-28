@@ -12,7 +12,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Customer
           </label>
-          <select
+          <!-- <select
             v-model="form.customerId"
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -21,7 +21,8 @@
             <option v-for="customer in customersData" :key="customer.id" :value="customer.id">
               {{ customer.name }}
             </option>
-          </select>
+          </select> -->
+          <USelectMenu searchable v-model="form.customerId" :options="customersData?.map(customer => ({ label: customer.name, value: customer.id }))" />
         </div>
 
         <div class="space-y-4">
@@ -127,7 +128,7 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const result = await GqlCreateOrder({
-      customerId: form.value.customerId,
+      customerId: form.value.customerId.value,
       items: form.value.items
     })
     if (result.createOrder) {

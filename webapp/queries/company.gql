@@ -1,0 +1,19 @@
+query GetCompany {
+  company {
+    id
+    name
+    email
+    address
+    phone
+  }
+}
+
+mutation UpdateCompany($name: String!, $email: String!, $address: String!, $phone: String) {
+  updateCompany(name: $name, email: $email, address: $address, phone: $phone) {
+    id
+    name
+    email
+    address
+    phone
+  }
+} 

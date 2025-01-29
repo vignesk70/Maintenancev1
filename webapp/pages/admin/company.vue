@@ -72,7 +72,15 @@ definePageMeta({
   middleware: ["auth"]
 })
 
-const { isAdmin } = useAuth()
+const { isAdmin, initialized } = useAuth()
+
+// Wait for auth to be initialized before checking admin status
+watchEffect(() => {
+  if (initialized.value && !isAdmin.value) {
+    navigateTo('/')
+  }
+})
+
 const form = ref({
   name: '',
   email: '',
@@ -80,13 +88,6 @@ const form = ref({
   phone: ''
 })
 const updating = ref(false)
-
-// Redirect non-admins
-watchEffect(() => {
-  if (!isAdmin.value) {
-    navigateTo('/')
-  }
-})
 
 // Load current company data
 const { data: company, pending, error } = await useAsyncGql('GetCompany')

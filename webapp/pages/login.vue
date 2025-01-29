@@ -65,7 +65,7 @@ const login = async () => {
   errorMessage.value = ""
 
   try {
-    const data = await GqlLoginWorker( {
+    const data = await GqlLoginWorker({
       email: email.value,
       password: password.value
     })
@@ -73,6 +73,10 @@ const login = async () => {
     if (data?.loginWorker?.token) {
       userToken.value = data.loginWorker.token
       useGqlToken(data.loginWorker.token)
+      
+      const { refresh } = useAuth()
+      await refresh()
+      
       router.push("/")
     }
   } catch (error: any) {

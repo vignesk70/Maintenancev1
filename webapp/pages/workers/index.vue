@@ -72,13 +72,22 @@ definePageMeta({
   middleware: ["auth"]
 })
 
-const { data: workers, pending, error } = await useAsyncGql('GetWorkers')
-const { isAdmin } = useAuth()
+const router = useRouter()
+const { isAdmin, initialized } = useAuth()
 
-// Handle errors and redirect non-admins
+// Wait for auth to be initialized before checking admin status
 watchEffect(() => {
-  if (error.value?.message?.includes('Admin access required') || !isAdmin.value) {
-    navigateTo('/')
+  if (initialized.value && !isAdmin.value) {
+    router.push('/')
+  }
+})
+
+const { data: workers, pending, error } = await useAsyncGql('GetWorkers')
+
+// Handle API errors
+watchEffect(() => {
+  if (error.value?.message?.includes('Admin access required')) {
+    router.push('/')
   }
 })
 </script> 

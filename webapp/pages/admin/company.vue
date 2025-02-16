@@ -4,66 +4,75 @@
       <h1 class="text-3xl font-bold">Company Settings</h1>
     </div>
 
-    <div v-if="pending" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-    <div v-else-if="error" class="p-4 bg-red-50 text-red-700 rounded-md">
-      {{ error.message }}
-    </div>
-    <div v-else class="bg-white shadow rounded-lg p-6 max-w-2xl">
-      <form @submit.prevent="handleSubmit">
-        <div class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Company Name</label>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              v-model="form.email"
-              type="email"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+    <UCard class="shadow-lg max-w-2xl">
+      <template #header>
+        <h3 class="text-lg font-semibold">Company Information</h3>
+      </template>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Address</label>
-            <textarea
-              v-model="form.address"
-              required
-              rows="3"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+      <div v-if="pending" class="flex justify-center py-8">
+        <UIcon name="i-heroicons-arrow-path-20-solid" class="w-8 h-8 animate-spin text-primary-500" />
+      </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Phone</label>
-            <input
-              v-model="form.phone"
-              type="tel"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+      <UAlert
+        v-else-if="error"
+        title="Error loading company data"
+        :description="error.gqlErrors?.[0]?.message || 'Failed to load company information'"
+        icon="i-heroicons-exclamation-triangle"
+        color="red"
+        variant="subtle"
+        class="mb-4"
+      />
 
-          <div class="flex justify-end">
-            <button
-              type="submit"
-              :disabled="updating"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {{ updating ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
+      <UForm v-else @submit="handleSubmit" class="space-y-4">
+        <UFormGroup label="Company Name" name="name" required>
+          <UInput
+            v-model="form.name"
+            type="text"
+            placeholder="Enter company name"
+            icon="i-heroicons-building-office-20-solid"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="Email" name="email" required>
+          <UInput
+            v-model="form.email"
+            type="email"
+            placeholder="Enter company email"
+            icon="i-heroicons-envelope-20-solid"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="Address" name="address" required>
+          <UTextarea
+            v-model="form.address"
+            placeholder="Enter company address"
+            icon="i-heroicons-map-pin-20-solid"
+            :rows="3"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="Phone" name="phone">
+          <UInput
+            v-model="form.phone"
+            type="tel"
+            placeholder="Enter phone number"
+            icon="i-heroicons-phone-20-solid"
+          />
+        </UFormGroup>
+
+        <div class="flex justify-end gap-3 pt-6">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="updating"
+            :disabled="updating"
+          >
+            <template v-if="!updating">Save Changes</template>
+            <template v-else>Saving...</template>
+          </UButton>
         </div>
-      </form>
-    </div>
+      </UForm>
+    </UCard>
   </div>
 </template>
 
@@ -74,7 +83,6 @@ definePageMeta({
 
 const { isAdmin, initialized } = useAuth()
 
-// Wait for auth to be initialized before checking admin status
 watchEffect(() => {
   if (initialized.value && !isAdmin.value) {
     navigateTo('/')
@@ -89,21 +97,21 @@ const form = ref({
 })
 const updating = ref(false)
 
-// Load current company data
 const { data: company, pending, error } = await useAsyncGql('GetCompany')
 
-// Update form when data is loaded
 watchEffect(() => {
   if (company.value?.company) {
-    form.value = { ...company.value.company }
+    form.value = { 
+      name: company.value.company.name,
+      email: company.value.company.email,
+      address: company.value.company.address,
+      phone: company.value.company.phone || ''
+    }
   }
 })
 
-// Handle form submission
 const handleSubmit = async () => {
-  if (!isAdmin.value) {
-    return
-  }
+  if (!isAdmin.value) return
   
   updating.value = true
   try {
@@ -113,10 +121,10 @@ const handleSubmit = async () => {
       address: form.value.address,
       phone: form.value.phone
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error updating company:', err)
   } finally {
     updating.value = false
   }
 }
-</script> 
+</script>

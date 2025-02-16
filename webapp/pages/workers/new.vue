@@ -4,76 +4,82 @@
       <h1 class="text-3xl font-bold">Add New Worker</h1>
     </div>
 
-    <div class="bg-white shadow rounded-lg p-6 max-w-2xl">
-      <form @submit.prevent="handleSubmit">
-        <div class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+    <UCard class="shadow-lg max-w-2xl">
+      <template #header>
+        <h3 class="text-lg font-semibold">Worker Details</h3>
+      </template>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              v-model="form.email"
-              type="email"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+      <UForm @submit.prevent="handleSubmit" class="space-y-4">
+        <UFormGroup label="Name" name="name" required>
+          <UInput
+            v-model="form.name"
+            type="text"
+            placeholder="Enter full name"
+            icon="i-heroicons-user-circle-20-solid"
+          />
+        </UFormGroup>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              v-model="form.password"
-              type="password"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+        <UFormGroup label="Email" name="email" required>
+          <UInput
+            v-model="form.email"
+            type="email"
+            placeholder="Enter email address"
+            icon="i-heroicons-envelope-20-solid"
+          />
+        </UFormGroup>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Role</label>
-            <select
-              v-model="form.role"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="STAFF">Staff</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
+        <UFormGroup label="Password" name="password" required>
+          <UInput
+            v-model="form.password"
+            type="password"
+            placeholder="Create a password"
+            icon="i-heroicons-lock-closed-20-solid"
+          />
+        </UFormGroup>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Phone</label>
-            <input
-              v-model="form.phone"
-              type="tel"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+        <UFormGroup label="Role" name="role" required>
+          <USelect
+            v-model="form.role"
+            :options="[
+              { value: 'STAFF', label: 'Staff' },
+              { value: 'ADMIN', label: 'Admin' }
+            ]"
+            placeholder="Select role"
+            icon="i-heroicons-user-group-20-solid"
+          />
+        </UFormGroup>
 
-          <div v-if="error" class="text-red-600 text-sm">
-            {{ error }}
-          </div>
+        <UFormGroup label="Phone" name="phone">
+          <UInput
+            v-model="form.phone"
+            type="tel"
+            placeholder="Enter phone number"
+            icon="i-heroicons-phone-20-solid"
+          />
+        </UFormGroup>
 
-          <div class="flex justify-end">
-            <UButton
-              type="submit"
-              :loading="loading"
-              :disabled="loading"
-            >
-              Create Worker
-            </UButton>
-          </div>
+        <UAlert
+          v-if="error"
+          :title="error"
+          icon="i-heroicons-exclamation-triangle-20-solid"
+          color="red"
+          variant="outline"
+          class="mt-4"
+        />
+
+        <div class="flex justify-end gap-3 pt-6">
+          <UButton
+            type="submit"
+            color="primary"
+            :loading="loading"
+            :disabled="loading"
+            icon="i-heroicons-plus-20-solid"
+          >
+            {{ loading ? 'Creating...' : 'Create Worker' }}
+          </UButton>
         </div>
-      </form>
-    </div>
+      </UForm>
+    </UCard>
   </div>
 </template>
 
@@ -97,9 +103,7 @@ const loading = ref(false)
 const error = ref('')
 
 const handleSubmit = async () => {
-  if (!isAdmin.value) {
-    return
-  }
+  if (!isAdmin.value) return
 
   loading.value = true
   error.value = ''
@@ -119,4 +123,4 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
-</script> 
+</script>

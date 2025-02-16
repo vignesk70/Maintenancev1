@@ -1,16 +1,32 @@
 <template>
-  <div class="space-y-4">
-    <NuxtLink 
-      to="/orders/new"
-      class="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
-      Create New Order
-    </NuxtLink>
-    <NuxtLink 
-      to="/customers/new"
-      class="block w-full text-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-    >
-      Add New Customer
-    </NuxtLink>
-  </div>
-</template> 
+  <UCard class="shadow-lg">
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Quick Actions</h3>
+      </div>
+    </template>
+
+    <div class="space-y-2">
+      <UButton
+        to="/orders/new"
+        color="blue"
+        variant="solid"
+        block
+        icon="i-heroicons-document-plus"
+        class="justify-center"
+      >
+        Create New Order
+      </UButton>
+      <UButton
+        to="/customers/new"
+        color="gray"
+        variant="solid"
+        block
+        icon="i-heroicons-user-plus"
+        class="justify-center"
+      >
+        Add New Customer
+      </UButton>
+    </div>
+  </UCard>
+</template>

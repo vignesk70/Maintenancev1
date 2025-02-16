@@ -37,6 +37,7 @@
                 <!-- Right side -->
                 <div class="flex items-center">
                     <ClientOnly>
+                        <h1 class="text-sm text-gray-500" v-if="isAuthenticated">{{ worker.name }}</h1>
                         <UButton v-if="isAuthenticated" color="gray" variant="ghost" @click="logout">
                             Logout
                         </UButton>

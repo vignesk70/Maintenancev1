@@ -69,4 +69,12 @@ mutation LoginWorker($email: String!, $password: String!) {
       role
     }
   }
+}
+
+mutation UpdateWorkerPassword($id: ID!, $newPassword: String!) {
+  updateWorkerPassword(id: $id, newPassword: $newPassword) {
+    id
+    name
+    email
+  }
 } 

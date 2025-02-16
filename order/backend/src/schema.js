@@ -122,6 +122,11 @@ const typeDefs = gql`
       quantity: Int
       price: Float
     ): OrderItem!
+
+    updateWorkerPassword(
+      id: ID!
+      newPassword: String!
+    ): Worker!
   }
 
   input OrderItemInput {

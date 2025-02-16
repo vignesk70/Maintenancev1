@@ -440,6 +440,56 @@ const resolvers = {
       );
       return result.rows[0];
     }),
+
+    updateWorker: requireAdmin(async (_, { id, ...fields }, { pool }) => {
+      // Build the update query dynamically
+      const setClauses = []
+      const values = []
+      let index = 1
+      
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+          setClauses.push(`${key} = $${index}`)
+          values.push(value)
+          index++
+        }
+      }
+
+      if (setClauses.length === 0) {
+        throw new Error('No fields to update')
+      }
+
+      const query = `
+        UPDATE workers
+        SET ${setClauses.join(', ')}
+        WHERE id = $${index}
+        RETURNING *
+      `
+      
+      const result = await pool.query(query, [...values, id])
+      
+      if (result.rows.length === 0) {
+        throw new Error('Worker not found')
+      }
+
+      return result.rows[0]
+    }),
+
+    updateWorkerPassword: requireAuth(async (_, { id, newPassword }, { pool, worker }) => {
+      // Verify current user is admin or the worker themselves
+      if (worker.role !== 'ADMIN' && worker.id !== id) {
+        throw new Error('Unauthorized to change this password');
+      }
+
+      // Update password directly
+      const newHash = await bcrypt.hash(newPassword, 10);
+      const result = await pool.query(
+        'UPDATE workers SET password_hash = $1 WHERE id = $2 RETURNING *',
+        [newHash, id]
+      );
+
+      return result.rows[0];
+    }),
   },
 };
 

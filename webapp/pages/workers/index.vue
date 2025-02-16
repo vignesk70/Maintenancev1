@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <ClientOnly>
+  <div v-if="initialized">
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold">Workers</h1>
       <NuxtLink
@@ -15,7 +16,7 @@
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     </div>
     <div v-else-if="error" class="p-4 bg-red-50 text-red-700 rounded-md">
-      {{ error.message }}
+      {{ error.gqlErrors?.[0]?.message || 'Failed to load workers' }}
     </div>
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
       <table class="min-w-full divide-y divide-gray-200">
@@ -54,7 +55,7 @@
             </td>
             <td class="px-6 py-4">
               <NuxtLink
-                :to="`/workers/${worker.id}`"
+                :to="`/workers/edit/${worker.id}`"
                 class="text-blue-600 hover:text-blue-900"
               >
                 Edit
@@ -65,6 +66,7 @@
       </table>
     </div>
   </div>
+</ClientOnly>
 </template>
 
 <script setup lang="ts">
@@ -86,8 +88,8 @@ const { data: workers, pending, error } = await useAsyncGql('GetWorkers')
 
 // Handle API errors
 watchEffect(() => {
-  if (error.value?.message?.includes('Admin access required')) {
+  if (error.value?.gqlErrors?.[0]?.message?.includes('Admin access required')) {
     router.push('/')
   }
 })
-</script> 
+</script>

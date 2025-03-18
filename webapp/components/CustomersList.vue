@@ -1,40 +1,60 @@
 <template>
-  <div class="bg-white rounded-lg shadow">
-    <ErrorDisplay v-if="error" :error="error" />
-    <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  <UCard class="shadow-lg">
+    <template #header>
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-lg font-semibold">Customer List</h3>
+        <div class="flex items-center gap-3 flex-1">
+          <UInput
+            v-model="searchTerm"
+            placeholder="Search customers..."
+            icon="i-heroicons-magnifying-glass"
+            class="flex-1"
+          />
+          <UPagination 
+            v-model="currentPage"
+            :page-count="pageSize"
+            :total="filteredCustomers.length"
+            class="ml-4"
+          />
+        </div>
+      </div>
+    </template>
+
+    <UAlert
+      v-if="error"
+      title="Error loading customers"
+      :description="error.gqlErrors?.[0]?.message || 'Failed to load customers'"
+      icon="i-heroicons-exclamation-triangle"
+      color="red"
+      variant="outline"
+      class="mb-4"
+    />
+
+    <div v-if="pending" class="space-y-4">
+      <USkeleton class="h-12 w-full" v-for="i in 5" :key="i" />
     </div>
-    <div v-else class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th 
-              v-for="col in columns" 
-              :key="col.key"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              {{ col.label }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="customer in data" :key="customer.id">
-            <td class="px-6 py-4 whitespace-nowrap">{{ customer.name }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">{{ customer.email }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">{{ customer.phone }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <NuxtLink 
-                :to="`/customers/${customer.id}`"
-                class="text-blue-600 hover:text-blue-900"
-              >
-                View
-              </NuxtLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+
+    <UTable
+      v-else
+      :columns="columns"
+      :rows="paginatedData"
+      :empty-state="{
+        icon: 'i-heroicons-document-magnifying-glass',
+        label: 'No customers found'
+      }"
+      class="w-full"
+    >
+      <template #actions-data="{ row }">
+        <UButton
+          :to="`/customers/${row.id}`"
+          color="gray"
+          variant="ghost"
+          icon="i-heroicons-eye-20-solid"
+          aria-label="View customer"
+        />
+      </template>
+    </UTable>
+  </UCard>
 </template>
 
 <script setup lang="ts">
@@ -42,21 +62,23 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
-  { key: 'actions', label: 'Actions' }
+  { key: 'actions', label: '' }
 ]
 
-const data = ref(null)
-const loading = ref(true)
-const error = ref(null)
+const currentPage = ref(1)
+const pageSize = 10
+const searchTerm = ref('')
+const { data: customers, error, pending } = await useAsyncGql('GetCustomers')
 
-onMounted(async () => {
-  try {
-    const result = await GqlGetCustomers()
-    data.value = result.customers
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
-  }
+const filteredCustomers = computed(() => {
+  if (!customers.value?.customers) return []
+  return customers.value.customers.filter(customer => 
+    customer.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchTerm.value.toLowerCase())
+  )
 })
-</script> 
+
+const paginatedData = computed(() => 
+  filteredCustomers.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize)
+)
+</script>

@@ -8,9 +8,11 @@ RUN npm install
 
 COPY . .
 
+RUN node src/testHash.js
+
 ENV NODE_ENV=development
 ENV PORT=4000
 
 EXPOSE 4000
 
-CMD ["npm", "run", "dev"] 
+CMD ["npm", "start"] 

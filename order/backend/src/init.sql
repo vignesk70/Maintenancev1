@@ -3,8 +3,36 @@ DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS order_payments CASCADE;
+DROP TABLE IF EXISTS workers CASCADE;
+DROP TABLE IF EXISTS company CASCADE;
 DROP TYPE IF EXISTS payment_status CASCADE;
 DROP TYPE IF EXISTS order_status CASCADE;
+DROP TYPE IF EXISTS worker_role CASCADE;
+
+-- Create company table
+CREATE TABLE company (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    address TEXT NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create worker role enum
+CREATE TYPE worker_role AS ENUM ('STAFF', 'ADMIN');
+
+-- Create workers table
+CREATE TABLE workers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role worker_role NOT NULL DEFAULT 'STAFF',
+    phone VARCHAR(20),
+    active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Create tables
 CREATE TABLE customers (
@@ -23,10 +51,12 @@ CREATE TYPE order_status AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'CANCELL
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER NOT NULL,
+    assigned_worker_id INTEGER,
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status order_status NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+    CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+    CONSTRAINT fk_worker FOREIGN KEY (assigned_worker_id) REFERENCES workers(id)
 );
 
 -- Create order items table
@@ -73,6 +103,11 @@ CREATE TRIGGER update_order_payments_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert sample data
+INSERT INTO workers (name, email, password_hash, role, phone, active) VALUES
+    ('Admin User', 'admin@example.com', 
+     '$2b$10$bNl0AhJvIbgCTxHrK0L0/uR6E3Kw4dFZaZBTB3vreOk/0RK8NqlHW',  -- password: admin123
+     'ADMIN', '555-0000', true);
+
 INSERT INTO customers (name, email, address, phone) VALUES
     ('John Doe', 'john@example.com', '123 Main St', '555-0123'),
     ('Jane Smith', 'jane@example.com', '456 Oak Ave', '555-0456');

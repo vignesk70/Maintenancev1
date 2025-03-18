@@ -27,6 +27,27 @@
               <dd>{{ data.orderDate ? formatDate(data.orderDate) : 'N/A' }}</dd>
             </div>
             <div class="flex justify-between items-center">
+              <dt class="text-gray-500">Assigned Worker</dt>
+              <dd>
+                <USelectMenu
+                  v-model="selectedWorker"
+                  searchable
+                  searchable-placeholder="Search Worker"
+                  :options="workers"
+                  option-attribute="name"
+                  value-attribute="id"
+                  placeholder="Assign a worker"
+                  class="min-w-[200px]"
+                  @update:model-value="updateAssignedWorker"
+                  :loading="workersLoading"
+                />
+                  <!-- <template #label>
+                    {{ data.assignedWorker?.name || 'Select worker...' }}
+                  </template>
+                </USelectMenu> -->
+              </dd>
+            </div>
+            <div class="flex justify-between items-center">
               <dt class="text-gray-500">Status</dt>
               <dd class="flex items-center gap-2">
                 <span 
@@ -252,15 +273,25 @@ const updating = ref(false)
 const selectedPaymentStatus = ref('')
 const selectedPaymentMethod = ref('')
 const editingItem = ref(null)
+const workers = ref<any[]>([])
+const workersLoading = ref(true)
+const selectedWorker = ref()
 
 const paymentStatuses = ['PENDING', 'PAID', 'FAILED', 'REFUNDED']
 
 onMounted(async () => {
   try {
-    const result = await GqlGetOrder({
+    // Load workers first
+    const workersResult = await GqlGetWorkers()
+    workers.value = workersResult.workers
+    workersLoading.value = false
+    
+    // Then load order
+    const orderResult = await GqlGetOrder({
       id: route.params.id as string
     })
-    data.value = result.order
+    data.value = orderResult.order
+    selectedWorker.value = data.value?.assignedWorker?.id || null
   } catch (e) {
     error.value = e.message
   } finally {
@@ -368,5 +399,27 @@ const confirmCancel = async () => {
   }
   
   await updateStatus('CANCELLED');
+}
+
+const updateAssignedWorker = async () => {
+  updating.value = true
+  console.log("updateuser")
+  console.log("selected workere",selectedWorker.value)
+  try {
+    console.log("try to update")
+    const result = await GqlUpdateOrderWorker({
+      orderId: route.params.id as string,
+      workerId: selectedWorker.value || null
+    })
+    console.log(result)
+    if (data.value) {
+      // data.value.assignedWorker = result.updateOrderWorker.assignedWorker
+      data.value.assignedWorker = selectedWorker.value
+    }
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    updating.value = false
+  }
 }
 </script> 

@@ -1,79 +1,111 @@
 <template>
-  <div class="bg-white rounded-lg shadow">
-    <ErrorDisplay v-if="error" :error="error" />
-    <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  <UCard class="shadow-lg">
+    <template #header>
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-lg font-semibold">Order List</h3>
+        <div class="flex items-center gap-3 flex-1">
+          <UInput
+            v-model="searchTerm"
+            placeholder="Search by date, customer or order number..."
+            icon="i-heroicons-magnifying-glass"
+            class="flex-1"
+          />
+          <UPagination 
+            v-model="currentPage"
+            :page-count="10"
+            :total="filteredData.length"
+            class="ml-4"
+          />
+        </div>
+      </div>
+    </template>
+
+    <UAlert
+      v-if="error"
+      title="Error loading orders"
+      :description="error"
+      icon="i-heroicons-exclamation-triangle"
+      color="red"
+      variant="outline"
+      class="mb-4"
+    />
+
+    <div v-if="loading" class="space-y-4">
+      <USkeleton class="h-12 w-full" v-for="i in 5" :key="i" />
     </div>
-    <div v-else class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th 
-              v-for="col in columns" 
-              :key="col.key"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              {{ col.label }}
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="order in data" :key="order.id">
-            <td class="px-6 py-4 whitespace-nowrap">#{{ order.id }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">{{ order.customer.name }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              {{ order.orderDate ? formatDate(order.orderDate) : 'N/A' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex items-center gap-2">
-                <span 
-                  :class="[
-                    'px-2 py-1 rounded text-sm font-medium',
-                    {
-                      'bg-green-100 text-green-800': order.status === 'COMPLETED',
-                      'bg-yellow-100 text-yellow-800': order.status === 'PENDING',
-                      'bg-blue-100 text-blue-800': order.status === 'PROCESSING'
-                    }
-                  ]"
-                >
-                  {{ order.status }}
-                </span>
-                <span
-                  v-if="order.payment"
-                  :class="[
-                    'px-2 py-1 rounded text-sm font-medium',
-                    {
-                      'bg-green-100 text-green-800': order.payment.status === 'PAID',
-                      'bg-yellow-100 text-yellow-800': order.payment.status === 'PENDING',
-                      'bg-red-100 text-red-800': order.payment.status === 'FAILED',
-                      'bg-gray-100 text-gray-800': order.payment.status === 'REFUNDED'
-                    }
-                  ]"
-                >
-                  {{ order.payment.status }}
-                </span>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              {{ order.payment?.amount ? `$${order.payment.amount.toFixed(2)}` : '-' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <NuxtLink 
-                :to="`/orders/${order.id}`"
-                class="text-blue-600 hover:text-blue-900"
-              >
-                View
-              </NuxtLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+
+    <UTable
+      v-else
+      :columns="columns"
+      :rows="paginatedData"
+      :empty-state="{
+        icon: 'i-heroicons-document-magnifying-glass',
+        label: 'No orders found'
+      }"
+      class="w-full"
+    >
+      <template #customer.name-data="{ row }">
+        {{ row.customer?.name || 'N/A' }}
+      </template>
+
+      <template #orderDate-data="{ row }">
+        {{ row.orderDate ? formatDate(row.orderDate) : 'N/A' }}
+      </template>
+
+      <template #status-data="{ row }">
+        <div class="flex items-center gap-1.5">
+          <UBadge 
+            :label="row.status" 
+            :color="statusColor(row.status)"
+            variant="subtle"
+          />
+          <UBadge 
+            v-if="row.payment?.status"
+            :label="row.payment.status" 
+            :color="paymentStatusColor(row.payment.status)"
+            variant="subtle"
+          />
+        </div>
+      </template>
+
+      <template #amount-data="{ row }">
+        <span class="font-medium">
+          {{ row.payment?.amount ? `$${row.payment.amount.toFixed(2)}` : '-' }}
+        </span>
+      </template>
+
+      <template #actions-data="{ row }">
+        <UButton
+          :to="`/orders/${row.id}`"
+          color="gray"
+          variant="ghost"
+          icon="i-heroicons-eye-20-solid"
+          aria-label="View order"
+        />
+      </template>
+    </UTable>
+  </UCard>
 </template>
 
 <script setup lang="ts">
 import { formatDate } from '~/utils/dateFormat'
+
+interface Order {
+  id: string
+  orderDate: string
+  status: string
+  customer: {
+    id: string
+    name: string
+    email: string
+  }
+  items: Array<{ id: string; productName: string; quantity: number; price: number }>
+  payment?: {
+    status: string
+    amount: number
+    paymentDate?: string | null
+  } | null
+}
 
 const columns = [
   { key: 'id', label: 'Order ID' },
@@ -81,26 +113,59 @@ const columns = [
   { key: 'orderDate', label: 'Date' },
   { key: 'status', label: 'Status' },
   { key: 'amount', label: 'Amount' },
-  { key: 'actions', label: 'Actions' }
+  { key: 'actions', label: '' }
 ]
 
-const data = ref(null)
+const currentPage = ref(1)
+const pageSize = 10
+const data = ref<Order[]>([])
 const loading = ref(true)
-const error = ref(null)
+const error = ref<string | null>(null)
+const searchTerm = ref('')
+
+const filteredData = computed(() => {
+  if (!searchTerm.value) return data.value
+  const lowerSearch = searchTerm.value.toLowerCase()
+  return data.value.filter(order => 
+    order.id.toLowerCase().includes(lowerSearch) ||
+    order.customer?.name?.toLowerCase().includes(lowerSearch) ||
+    (order.orderDate && formatDate(order.orderDate).toLowerCase().includes(lowerSearch))
+  )
+})
+
+const paginatedData = computed(() => 
+  filteredData.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize)
+)
+
+const statusColor = (status: string) => {
+  return {
+    'COMPLETED': 'green',
+    'PENDING': 'yellow',
+    'PROCESSING': 'blue'
+  }[status] as 'green' | 'yellow' | 'blue'
+}
+
+const paymentStatusColor = (status: string) => {
+  return {
+    'PAID': 'green',
+    'PENDING': 'yellow',
+    'FAILED': 'red',
+    'REFUNDED': 'gray'
+  }[status] as 'green' | 'yellow' | 'red' | 'gray'
+}
 
 onMounted(async () => {
   try {
     const result = await GqlGetOrders()
     if (result?.orders) {
-      data.value = result.orders
+      data.value = result.orders.slice(0, 30) // Show first 30 orders (3 pages of 10)
     } else {
       error.value = 'No orders found'
     }
-  } catch (e) {
-    console.error('Error fetching orders:', e)
-    error.value = e.message
+  } catch (e: any) {
+    error.value = e.message || 'Failed to load orders'
   } finally {
     loading.value = false
   }
 })
-</script> 
+</script>

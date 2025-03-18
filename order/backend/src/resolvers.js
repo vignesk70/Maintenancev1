@@ -1,3 +1,6 @@
+const { requireAuth, requireAdmin, generateToken } = require('./auth');
+const bcrypt = require('bcrypt');
+
 const resolvers = {
   Query: {
     customers: async (_, __, { pool }) => {
@@ -49,6 +52,39 @@ const resolvers = {
         status: order.status
       };
     },
+
+    company: requireAuth(async (_, __, { pool }) => {
+      const result = await pool.query('SELECT * FROM company LIMIT 1');
+      return result.rows[0];
+    }),
+
+    workers: requireAdmin(async (_, __, { pool }) => {
+      const result = await pool.query('SELECT * FROM workers ORDER BY name');
+      return result.rows;
+    }),
+
+    worker: requireAuth(async (_, { id }, { pool, worker }) => {
+      // Staff can only view their own profile
+      if (worker.role !== 'ADMIN' && worker.id !== parseInt(id)) {
+        throw new Error('Not authorized');
+      }
+      const result = await pool.query('SELECT * FROM workers WHERE id = $1', [id]);
+      return result.rows[0];
+    }),
+
+    myAssignedOrders: requireAuth(async (_, __, { pool, worker }) => {
+      const result = await pool.query(
+        `SELECT * FROM orders 
+         WHERE assigned_worker_id = $1 
+         ORDER BY order_date DESC`,
+        [worker.id]
+      );
+      return result.rows;
+    }),
+
+    currentWorker: requireAuth((_, __, { worker }) => {
+      return worker;
+    }),
   },
 
   Customer: {
@@ -102,7 +138,16 @@ const resolvers = {
         [order.id]
       );
       return result.rows[0];
-    }
+    },
+
+    assignedWorker: async (order, _, { pool }) => {
+      if (!order.assigned_worker_id) return null;
+      const result = await pool.query(
+        'SELECT id, name, email FROM workers WHERE id = $1',
+        [order.assigned_worker_id]
+      );
+      return result.rows[0];
+    },
   },
 
   Mutation: {
@@ -165,7 +210,20 @@ const resolvers = {
       }
     },
     
-    updateOrderStatus: async (_, { id, status }, { pool }) => {
+    updateOrderStatus: requireAuth(async (_, { id, status }, { pool, worker }) => {
+      // Check if worker is assigned to this order or is admin
+      const orderResult = await pool.query(
+        'SELECT * FROM orders WHERE id = $1',
+        [id]
+      );
+      
+      const order = orderResult.rows[0];
+      if (!order) throw new Error('Order not found');
+
+      if (worker.role !== 'ADMIN' && order.assigned_worker_id !== worker.id) {
+        throw new Error('Not authorized to update this order');
+      }
+
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -203,7 +261,7 @@ const resolvers = {
       } finally {
         client.release();
       }
-    },
+    }),
 
     updatePaymentStatus: async (_, { orderId, status, paymentMethod, transactionId }, { pool }) => {
       const paymentDate = status === 'PAID' ? new Date() : null;
@@ -319,7 +377,158 @@ const resolvers = {
       } finally {
         client.release();
       }
-    }
+    },
+
+    updateCompany: requireAdmin(async (_, { name, address, phone, email }, { pool }) => {
+      const result = await pool.query(
+        `INSERT INTO company (name, address, phone, email)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (email) DO UPDATE
+         SET name = EXCLUDED.name,
+             address = EXCLUDED.address,
+             phone = EXCLUDED.phone
+         RETURNING *`,
+        [name, address, phone, email]
+      );
+      return result.rows[0];
+    }),
+
+    createWorker: requireAdmin(async (_, { name, email, password, role, phone }, { pool }) => {
+      const passwordHash = await bcrypt.hash(password, 10);
+      const result = await pool.query(
+        `INSERT INTO workers (name, email, password_hash, role, phone)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [name, email, passwordHash, role, phone]
+      );
+      return result.rows[0];
+    }),
+
+    loginWorker: async (_, { email, password }, { pool }) => {
+      const result = await pool.query(
+        `SELECT 
+          id, name, email, password_hash, role, phone, active 
+          FROM workers 
+          WHERE email = $1`,
+        [email]
+      );
+      
+      const worker = result.rows[0];
+      if (!worker) {
+        throw new Error('Invalid credentials');
+      }
+
+      if (!worker.active) {
+        throw new Error('Account is not active');
+      }
+
+      const valid = await bcrypt.compare(password, worker.password_hash);
+      if (!valid) {
+        throw new Error('Invalid credentials');
+      }
+
+      return {
+        token: generateToken(worker),
+        worker: {
+          id: worker.id,
+          name: worker.name,
+          email: worker.email,
+          role: worker.role,
+          active: worker.active
+        }
+      };
+    },
+
+    assignOrder: requireAdmin(async (_, { orderId, workerId }, { pool }) => {
+      const result = await pool.query(
+        `UPDATE orders 
+         SET assigned_worker_id = $1 
+         WHERE id = $2 
+         RETURNING *`,
+        [workerId, orderId]
+      );
+      return result.rows[0];
+    }),
+
+    updateWorker: requireAdmin(async (_, { id, ...fields }, { pool }) => {
+      // Build the update query dynamically
+      const setClauses = []
+      const values = []
+      let index = 1
+      
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+          setClauses.push(`${key} = $${index}`)
+          values.push(value)
+          index++
+        }
+      }
+
+      if (setClauses.length === 0) {
+        throw new Error('No fields to update')
+      }
+
+      const query = `
+        UPDATE workers
+        SET ${setClauses.join(', ')}
+        WHERE id = $${index}
+        RETURNING *
+      `
+      
+      const result = await pool.query(query, [...values, id])
+      
+      if (result.rows.length === 0) {
+        throw new Error('Worker not found')
+      }
+
+      return result.rows[0]
+    }),
+
+    updateWorkerPassword: requireAuth(async (_, { id, newPassword }, { pool, worker }) => {
+      // Verify current user is admin or the worker themselves
+      if (worker.role !== 'ADMIN' && worker.id !== id) {
+        throw new Error('Unauthorized to change this password');
+      }
+
+      // Update password directly
+      const newHash = await bcrypt.hash(newPassword, 10);
+      const result = await pool.query(
+        'UPDATE workers SET password_hash = $1 WHERE id = $2 RETURNING *',
+        [newHash, id]
+      );
+
+      return result.rows[0];
+    }),
+
+    updateOrderWorker: requireAuth(async (_, { orderId, workerId }, { pool }) => {
+      const result = await pool.query(
+        `UPDATE orders 
+         SET assigned_worker_id = $1 
+         WHERE id = $2 
+         RETURNING *`,
+        [workerId, orderId]
+      );
+      console.log("resolvers - set worker to order")
+      
+      const updatedOrder = result.rows[0];
+      
+      // Fetch worker details if assigned
+      let assignedWorker = null;
+      if (updatedOrder.assigned_worker_id) {
+        const workerRes = await pool.query(
+          'SELECT id, name, email FROM workers WHERE id = $1',
+          [updatedOrder.assigned_worker_id]
+        );
+        assignedWorker = workerRes.rows[0];
+      }
+
+      return {
+        ...updatedOrder,
+        assignedWorker,
+        customerId: updatedOrder.customer_id,
+        orderDate: updatedOrder.order_date
+      };
+    }),
   },
 };
 

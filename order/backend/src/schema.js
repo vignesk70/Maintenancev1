@@ -10,9 +10,28 @@ const typeDefs = gql`
     orders: [Order!]!
   }
 
+  type Company {
+    id: ID!
+    name: String!
+    address: String!
+    phone: String
+    email: String!
+  }
+
+  type Worker {
+    id: ID!
+    name: String!
+    email: String!
+    role: WorkerRole!
+    phone: String
+    active: Boolean!
+    assignedOrders: [Order!]!
+  }
+
   type Order {
     id: ID!
     customer: Customer!
+    assignedWorker: Worker
     orderDate: String!
     status: String!
     items: [OrderItem!]!
@@ -28,6 +47,11 @@ const typeDefs = gql`
   }
 
   type Query {
+    currentWorker: Worker
+    company: Company
+    workers: [Worker!]!
+    worker(id: ID!): Worker
+    myAssignedOrders: [Order!]!
     customers: [Customer!]!
     customer(id: ID!): Customer
     orders: [Order!]!
@@ -35,6 +59,40 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    updateCompany(
+      name: String!
+      address: String!
+      phone: String
+      email: String!
+    ): Company!
+
+    createWorker(
+      name: String!
+      email: String!
+      password: String!
+      role: WorkerRole!
+      phone: String
+    ): Worker!
+
+    updateWorker(
+      id: ID!
+      name: String
+      email: String
+      role: WorkerRole
+      phone: String
+      active: Boolean
+    ): Worker!
+
+    assignOrder(
+      orderId: ID!
+      workerId: ID!
+    ): Order!
+
+    loginWorker(
+      email: String!
+      password: String!
+    ): AuthPayload!
+
     createCustomer(
       name: String!
       email: String!
@@ -64,6 +122,13 @@ const typeDefs = gql`
       quantity: Int
       price: Float
     ): OrderItem!
+
+    updateWorkerPassword(
+      id: ID!
+      newPassword: String!
+    ): Worker!
+
+    updateOrderWorker(orderId: ID!, workerId: ID): Order!
   }
 
   input OrderItemInput {
@@ -89,6 +154,16 @@ const typeDefs = gql`
     transactionId: String
     createdAt: String!
     updatedAt: String!
+  }
+
+  enum WorkerRole {
+    STAFF
+    ADMIN
+  }
+
+  type AuthPayload {
+    token: String!
+    worker: Worker!
   }
 `;
 

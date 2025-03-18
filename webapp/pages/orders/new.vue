@@ -1,118 +1,120 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold mb-8">New Order</h1>
-    <div class="max-w-3xl bg-white rounded-lg shadow p-6">
-      <!-- Show error message if exists -->
-      <div v-if="error" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-        {{ error.message }}
-      </div>
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold">New Order</h1>
+    </div>
 
-      <form @submit.prevent="handleSubmit" class="space-y-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            Customer
-          </label>
-          <select
+    <UCard class="shadow-lg max-w-3xl">
+      <template #header>
+        <h3 class="text-lg font-semibold">Create New Order</h3>
+      </template>
+
+      <UAlert
+        v-if="error"
+        :title="error"
+        icon="i-heroicons-exclamation-triangle"
+        color="red"
+        variant="subtle"
+        class="mb-4"
+      />
+
+      <UForm :state="form" @submit.prevent="handleSubmit" class="space-y-6">
+        <UFormGroup label="Customer" name="customer" required>
+          <USelectMenu
+            searchable
             v-model="form.customerId"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select a customer</option>
-            <option v-for="customer in customersData" :key="customer.id" :value="customer.id">
-              {{ customer.name }}
-            </option>
-          </select>
-        </div>
+            :options="customersData?.map(customer => ({ label: customer.name, value: customer.id }))"
+            placeholder="Select a customer"
+            icon="i-heroicons-user-circle-20-solid"
+            :loading="customersLoading"
+          />
+        </UFormGroup>
 
         <div class="space-y-4">
-          <h3 class="font-medium">Order Items</h3>
+          <h3 class="text-sm font-medium text-gray-700">Order Items</h3>
           <div v-for="(item, index) in form.items" :key="index" class="flex gap-4 items-start">
-            <div class="flex-1">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Product Name
-              </label>
-              <input
+            <UFormGroup label="Product Name" class="flex-1" required>
+              <UInput
                 v-model="item.productName"
                 type="text"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Product name"
+                icon="i-heroicons-shopping-bag-20-solid"
               />
-            </div>
-            <div class="w-24">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Quantity
-              </label>
-              <input
+            </UFormGroup>
+
+            <UFormGroup label="Quantity" class="w-24" required>
+              <UInput
                 v-model.number="item.quantity"
                 type="number"
                 min="1"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                icon="i-heroicons-hashtag-20-solid"
               />
-            </div>
-            <div class="w-32">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Price
-              </label>
-              <input
+            </UFormGroup>
+
+            <UFormGroup label="Price" class="w-32" required>
+              <UInput
                 v-model.number="item.price"
                 type="number"
                 step="0.01"
                 min="0"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                icon="i-heroicons-currency-dollar-20-solid"
               />
-            </div>
-            <button
+            </UFormGroup>
+
+            <UButton
               type="button"
               @click="removeItem(index)"
-              class="mt-7 p-2 text-red-600 hover:bg-red-50 rounded-md"
-            >
-              Remove
-            </button>
+              color="red"
+              variant="link"
+              class="mt-7"
+              icon="i-heroicons-trash-20-solid"
+            />
           </div>
-          <button
+
+          <UButton
             type="button"
             @click="addItem"
-            class="text-blue-600 hover:text-blue-700"
-          >
-            + Add Item
-          </button>
+            variant="outline"
+            icon="i-heroicons-plus-20-solid"
+            label="Add Item"
+          />
         </div>
 
-        <div class="flex justify-end space-x-3">
-          <NuxtLink
+        <div class="flex justify-end gap-3 pt-6">
+          <UButton
+            type="button"
             to="/orders"
-            class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Cancel
-          </NuxtLink>
-          <button
+            color="gray"
+            variant="solid"
+            label="Cancel"
+          />
+          <UButton
             type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            color="primary"
+            :loading="loading"
             :disabled="loading"
-          >
-            {{ loading ? 'Creating...' : 'Create Order' }}
-          </button>
+            icon="i-heroicons-document-plus-20-solid"
+            :label="loading ? 'Creating...' : 'Create Order'"
+          />
         </div>
-      </form>
-    </div>
+      </UForm>
+    </UCard>
   </div>
 </template>
 
 <script setup lang="ts">
 const router = useRouter()
-const error = ref(null)
+const error = ref<string | null>(null)
 const loading = ref(false)
-const customersData = ref(null)
+const customersData = ref<Array<{ id: string; name: string }>>([])
 const customersLoading = ref(true)
 
 onMounted(async () => {
   try {
     const result = await GqlGetCustomers()
-    customersData.value = result.customers
-  } catch (e) {
-    error.value = e.message
+    customersData.value = result.customers || []
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to load customers'
   } finally {
     customersLoading.value = false
   }
@@ -127,14 +129,14 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const result = await GqlCreateOrder({
-      customerId: form.value.customerId,
+      customerId: form.value.customerId.value,
       items: form.value.items
     })
     if (result.createOrder) {
       router.push('/orders')
     }
-  } catch (e) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Failed to create order'
   } finally {
     loading.value = false
   }
@@ -147,4 +149,4 @@ const addItem = () => {
 const removeItem = (index: number) => {
   form.value.items.splice(index, 1)
 }
-</script> 
+</script>

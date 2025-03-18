@@ -1,0 +1,80 @@
+query GetCurrentWorker {
+  currentWorker {
+    id
+    name
+    email
+    role
+  }
+}
+
+query GetWorkers {
+  workers {
+    id
+    name
+    email
+    role
+    phone
+    active
+  }
+}
+
+query GetWorker($id: ID!) {
+  worker(id: $id) {
+    id
+    name
+    email
+    role
+    phone
+    active
+    # assignedOrders {
+    #   id
+    #   orderDate
+    #   status
+    #   customer {
+    #     name
+    #   }
+    # }
+  }
+}
+
+mutation CreateWorker($name: String!, $email: String!, $password: String!, $role: WorkerRole!, $phone: String) {
+  createWorker(name: $name, email: $email, password: $password, role: $role, phone: $phone) {
+    id
+    name
+    email
+    role
+    phone
+    active
+  }
+}
+
+mutation UpdateWorker($id: ID!, $name: String, $email: String, $role: WorkerRole, $phone: String, $active: Boolean) {
+  updateWorker(id: $id, name: $name, email: $email, role: $role, phone: $phone, active: $active) {
+    id
+    name
+    email
+    role
+    phone
+    active
+  }
+}
+
+mutation LoginWorker($email: String!, $password: String!) {
+  loginWorker(email: $email, password: $password) {
+    token
+    worker {
+      id
+      name
+      email
+      role
+    }
+  }
+}
+
+mutation UpdateWorkerPassword($id: ID!, $newPassword: String!) {
+  updateWorkerPassword(id: $id, newPassword: $newPassword) {
+    id
+    name
+    email
+  }
+} 

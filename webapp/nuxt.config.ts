@@ -14,12 +14,16 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      GQL_HOST: 'http://localhost:4000/graphql' ,// overwritten by process.env.GQL_HOST
+      GQL_HOST: 'http://localhost:4000/graphql',
       'graphql-client': {
         clients: {
           default: {
             schema: './schema/schema.graphql',
             host: 'http://localhost:4000/graphql',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
           }
         }
       }
@@ -42,16 +46,24 @@ export default defineNuxtConfig({
     }
   },
 
-  'graphql-client':{
-        watch: true,
-        autoImport: true,
-        functionPrefix: 'Gql',
-        documentPaths: ['./'],
-        preferGETQueries: false,
-        codegen: {
-          disableOnBuild: true,
-        }
-    },
+  graphqlClient: {
+    watch: true,
+    autoImport: true,
+    functionPrefix: 'Gql',
+    documentPaths: ['./'],
+    preferGETQueries: false,
+    codegen: {
+      disableOnBuild: true
+    }
+  },
 
-  compatibilityDate: '2025-01-23'
+  compatibilityDate: '2025-01-23',
+
+  router: {
+    middleware: ['auth']
+  },
+
+  plugins: [
+    { src: '~/plugins/auth.ts', mode: 'client' }
+  ]
 })

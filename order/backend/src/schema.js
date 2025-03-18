@@ -127,6 +127,8 @@ const typeDefs = gql`
       id: ID!
       newPassword: String!
     ): Worker!
+
+    updateOrderWorker(orderId: ID!, workerId: ID): Order!
   }
 
   input OrderItemInput {

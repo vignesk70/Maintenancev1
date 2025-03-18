@@ -18,7 +18,7 @@
         class="mb-4"
       />
 
-      <UForm @submit.prevent="handleSubmit" class="space-y-6">
+      <UForm :state="form" @submit.prevent="handleSubmit" class="space-y-6">
         <UFormGroup label="Customer" name="customer" required>
           <USelectMenu
             searchable
@@ -129,7 +129,7 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const result = await GqlCreateOrder({
-      customerId: form.value.customerId,
+      customerId: form.value.customerId.value,
       items: form.value.items
     })
     if (result.createOrder) {

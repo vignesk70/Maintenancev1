@@ -22,16 +22,16 @@ async function startServer() {
     typeDefs,
     resolvers,
     context: async ({ req }) => {
-      console.log('Request headers:', req.headers);
+      // console.log('Request headers:', req.headers);
       // Try to get token from different possible header formats
       const authHeader = req.headers.authorization || req.headers.Authorization || '';
-      console.log('Auth header:', authHeader);
+      // console.log('Auth header:', authHeader);
       
       const token = authHeader.replace('Bearer ', '').trim();
-      console.log('Extracted token:', token);
+      // console.log('Extracted token:', token);
       
       const worker = await getWorkerFromToken(token, pool);
-      console.log('Context worker:', worker); // Debug log
+      // console.log('Context worker:', worker); // Debug log
       
       return {
         pool,
@@ -52,7 +52,7 @@ async function startServer() {
 
   const PORT = process.env.PORT || 4000;
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}${server.graphqlPath}`);
+    console.info(`Server running at http://localhost:${PORT}${server.graphqlPath}`);
   });
 }
 

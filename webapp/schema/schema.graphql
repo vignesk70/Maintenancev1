@@ -72,6 +72,7 @@ type Mutation {
   updatePaymentStatus(orderId: ID!, status: PaymentStatus!, paymentMethod: String, transactionId: String): OrderPayment!
   updateOrderItem(id: ID!, quantity: Int, price: Float): OrderItem!
   updateWorkerPassword(id: ID!, newPassword: String!): Worker!
+  updateOrderWorker(orderId: ID!, workerId: ID): Order!
 }
 
 input OrderItemInput {

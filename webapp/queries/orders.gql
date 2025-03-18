@@ -43,6 +43,10 @@ query GetOrder($id: ID!) {
       email
       phone
     }
+    assignedWorker {
+      id
+      name
+    }
     items {
       id
       productName
@@ -114,5 +118,29 @@ mutation UpdateOrderItem($id: ID!, $quantity: Int, $price: Float) {
     productName
     quantity
     price
+  }
+}
+
+mutation UpdateOrderWorker($orderId: ID!, $workerId: ID) {
+  updateOrderWorker(orderId: $orderId, workerId: $workerId) {
+    id
+    assignedWorker {
+      id
+      name
+      email
+      phone
+    }
+    status
+    orderDate
+    customer {
+      id
+      name
+      phone
+    }
+    items {
+      id
+      productName
+      quantity
+    }
   }
 } 

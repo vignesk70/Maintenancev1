@@ -9,7 +9,7 @@
         <h3 class="text-lg font-semibold">Worker Details</h3>
       </template>
 
-      <UForm @submit.prevent="handleSubmit" class="space-y-4">
+      <UForm :state="form" @submit.prevent="handleSubmit" class="space-y-4">
         <UFormGroup label="Name" name="name" required>
           <UInput
             v-model="form.name"

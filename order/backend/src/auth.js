@@ -36,7 +36,7 @@ const getWorkerFromToken = async (token, pool) => {
 
 const requireAuth = (resolver) => {
   return async (parent, args, context, info) => {
-    // console.log('Context worker:', context.worker);
+    console.log('Context worker:', context.worker);
     if (!context.worker) {
       throw new Error('Authentication required');
     }

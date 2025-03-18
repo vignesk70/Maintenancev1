@@ -62,7 +62,9 @@
                 />
               </div>
             </div>
-            <UIcon name="i-heroicons-chevron-right-20-solid" class="text-gray-400 group-hover:text-blue-500" />
+            <NuxtLink :to="`/orders/${order.id}`">
+            <UIcon name="i-heroicons-chevron-right-20-solid" class="text-gray-400 group-hover:text-blue-500"/>
+          </NuxtLink>
           </div>
         </div>
       </div>

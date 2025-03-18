@@ -81,6 +81,8 @@ definePageMeta({
   middleware: ["auth"]
 })
 
+const toast = useToast()
+
 const { isAdmin, initialized } = useAuth()
 
 watchEffect(() => {
@@ -112,7 +114,7 @@ watchEffect(() => {
 
 const handleSubmit = async () => {
   if (!isAdmin.value) return
-  
+  console.log('form', form.value)
   updating.value = true
   try {
     await useAsyncGql('UpdateCompany', {
@@ -121,6 +123,8 @@ const handleSubmit = async () => {
       address: form.value.address,
       phone: form.value.phone
     })
+    toast.add({title: 'Company updated successfully'})
+
   } catch (err) {
     console.error('Error updating company:', err)
   } finally {

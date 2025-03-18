@@ -138,7 +138,16 @@ const resolvers = {
         [order.id]
       );
       return result.rows[0];
-    }
+    },
+
+    assignedWorker: async (order, _, { pool }) => {
+      if (!order.assigned_worker_id) return null;
+      const result = await pool.query(
+        'SELECT id, name, email FROM workers WHERE id = $1',
+        [order.assigned_worker_id]
+      );
+      return result.rows[0];
+    },
   },
 
   Mutation: {
@@ -489,6 +498,36 @@ const resolvers = {
       );
 
       return result.rows[0];
+    }),
+
+    updateOrderWorker: requireAuth(async (_, { orderId, workerId }, { pool }) => {
+      const result = await pool.query(
+        `UPDATE orders 
+         SET assigned_worker_id = $1 
+         WHERE id = $2 
+         RETURNING *`,
+        [workerId, orderId]
+      );
+      console.log("resolvers - set worker to order")
+      
+      const updatedOrder = result.rows[0];
+      
+      // Fetch worker details if assigned
+      let assignedWorker = null;
+      if (updatedOrder.assigned_worker_id) {
+        const workerRes = await pool.query(
+          'SELECT id, name, email FROM workers WHERE id = $1',
+          [updatedOrder.assigned_worker_id]
+        );
+        assignedWorker = workerRes.rows[0];
+      }
+
+      return {
+        ...updatedOrder,
+        assignedWorker,
+        customerId: updatedOrder.customer_id,
+        orderDate: updatedOrder.order_date
+      };
     }),
   },
 };

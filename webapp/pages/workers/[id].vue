@@ -18,7 +18,7 @@
       {{ error.gqlErrors?.[0]?.message || 'Failed to load worker' }}
     </div>
     <div v-else class="bg-white shadow rounded-lg p-6 max-w-2xl">
-      <form @submit.prevent="handleSubmit">
+      <form :state="form" @submit.prevent="handleSubmit">
         <div class="space-y-6">
           <div>
             <label class="block text-sm font-medium text-gray-700">Name</label>
